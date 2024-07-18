@@ -1,0 +1,54 @@
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.linear_model import LinearRegression
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+
+# Load the dataset
+data = pd.read_csv(r"C:\Users\Kiran\OneDrive\Desktop\shreyas\car.csv")
+df = pd.DataFrame(data)
+
+# Drop unnecessary columns (if any)
+df.drop(columns=['Car_Name'], inplace=True)
+
+# Handle categorical variables
+categorical_cols = ['Fuel_Type', 'Selling_type', 'Transmission']
+numeric_cols = ['Year', 'Present_Price', 'Driven_kms']
+
+# Define preprocessing steps
+numeric_transformer = Pipeline(steps=[
+    ('scaler', StandardScaler())
+])
+
+categorical_transformer = Pipeline(steps=[
+    ('onehot', OneHotEncoder(drop='first'))
+])
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ('num', numeric_transformer, numeric_cols),
+        ('cat', categorical_transformer, categorical_cols)
+    ])
+
+# Define the model
+model = Pipeline(steps=[('preprocessor', preprocessor),
+                        ('regressor', LinearRegression())])
+
+# Features and target variable
+X = df.drop(columns=['Selling_Price'])
+y = df['Selling_Price']
+
+# Split the data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Fit the model
+model.fit(X_train, y_train)
+
+new_car_features = pd.DataFrame([[2014, 5.59, 27000, 'Petrol', 'Dealer', 'Manual']], 
+                                columns=['Year', 'Present_Price', 'Driven_kms', 'Fuel_Type', 'Selling_type', 'Transmission'])
+
+predicted_price = model.predict(new_car_features)
+
+print(f'Predicted Price: {predicted_price[0]:.2f}')
